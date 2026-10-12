@@ -39,3 +39,55 @@ jobs:
           name: coverage
           path: coverage/
           if-no-files-found: ignore
+
+  sdk-nodejs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk-nodejs
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: sdk-nodejs/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Pack (dry run)
+        run: npm pack --dry-run
+
+  sdk-python:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk-python
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test/build deps
+        run: pip install pytest build
+
+      - name: Test
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q
+
+      - name: Build (sdist + wheel)
+        run: python -m build

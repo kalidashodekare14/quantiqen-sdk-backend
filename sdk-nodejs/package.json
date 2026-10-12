@@ -1,0 +1,59 @@
+{
+  "name": "@quantiqen/sdk",
+  "version": "0.1.0",
+  "description": "QUANTIQEN telemetry ingestion SDK for Node.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "quantiqen",
+    "security",
+    "telemetry",
+    "sdk"
+  ],
+  "author": {
+    "name": "QUANTIQEN",
+    "url": "https://github.com/kalidashodekare14"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kalidashodekare14/quantiqen-sdk-backend.git",
+    "directory": "sdk-nodejs"
+  },
+  "homepage": "https://github.com/kalidashodekare14/quantiqen-sdk-backend/tree/main/sdk-nodejs",
+  "bugs": {
+    "url": "https://github.com/kalidashodekare14/quantiqen-sdk-backend/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.11"
+  }
+}

@@ -17,7 +17,19 @@ SDK ──HTTPS + X-API-KEY──▶ SDK Backend (this service, public)
 
 **This edge never authenticates, parses, scores, or decides.** Real API-key validation,
 DTO validation, and the detection pipeline stay on the platform. See `docs/sdk_plan.md`
-§4–§5 in the platform repo for the full design.
+§4–§5 for the full design.
+
+## Repository layout
+
+| Path | What it is |
+|---|---|
+| `src/`, `test/` | Express SDK edge (this service) — pure proxy in front of the platform |
+| `sdk-nodejs/` | `@quantiqen/sdk` — Node.js telemetry SDK ([README](./sdk-nodejs/README.md)) |
+| `sdk-python/` | `quantiqen-sdk` — Python telemetry SDK ([README](./sdk-python/README.md)) |
+| `docs/sdk_plan.md` | Full public-SDKs plan (phases, repo strategy, release workflow) |
+
+The SDKs are maintained here and publish from this repository. They talk to the
+edge above; the edge forwards to the private platform.
 
 ## Endpoints
 
@@ -84,6 +96,33 @@ Edge errors use the platform standard envelope; platform responses pass through 
 | Upstream unreachable | 503 | `UPSTREAM_UNAVAILABLE` |
 | Everything from NestJS | passthrough | passthrough (401/422/429/…) |
 
+## Telemetry payloads (convention, docs-only)
+
+The edge is a pure proxy — telemetry is **not** interpreted here (§4.4 of the
+plan: no business logic at the edge). The convention lives in the SDKs and is
+enforced by the platform's event DTO (free-form JSON `payload`):
+
+- `eventCategory: "telemetry"`, `eventType: "telemetry.{metric|span|performance|log}"`
+- `payload.telemetryType` discriminates `metric` / `span` / `performance` / `log`
+- Auto-generated UUID `idempotencyKey` per record (metrics dedup collision-proof)
+- Severity defaults `INFO`; log level→severity maps within the existing enum
+
+```
+SDK sendMetric/sendSpan/sendPerformance/sendLog
+  → batcher (existing /v1/events/bulk path)
+    → this edge (format check, rate limit, proxy only)
+      → {NESTJS_BASE_URL}/api/v1/events/bulk (validation, enrichment, redaction)
+```
+
+Curl through the edge (same as any event — no special telemetry route):
+
+```bash
+curl -X POST https://api.quantiqen.com/v1/events/bulk \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: qtn_live_..." \
+  -d '{"events":[{"eventType":"telemetry.metric","eventCategory":"telemetry","severity":"INFO","source":"api","occurredAt":"2026-01-01T00:00:00Z","idempotencyKey":"11111111-2222-3333-4444-555555555555","payload":{"telemetryType":"metric","metric":{"name":"http.requests","kind":"counter","value":1,"labels":{"route":"/users"}}}}]}'
+```
+
 ## Development
 
 ```bash
@@ -93,6 +132,13 @@ npm test            # vitest (upstream mocked via global fetch)
 npm run test:cov    # vitest + coverage (≥80% thresholds)
 npm run build       # tsc → dist/
 npm start           # node dist/server.js
+```
+
+SDKs (each folder is self-contained):
+
+```bash
+cd sdk-nodejs && npm install && npm test && npm run build   # Node SDK
+cd sdk-python && pip install pytest && PYTHONPATH=src python -m pytest
 ```
 
 ## Deploy (Render)
