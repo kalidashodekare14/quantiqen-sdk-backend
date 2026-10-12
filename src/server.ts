@@ -1,3 +1,6 @@
+// Load .env for local development; no-op when the file is absent (Render and
+// other platforms inject env vars directly). Must run before loadConfig().
+import 'dotenv/config';
 import { loadConfig } from './config.js';
 import { createLogger } from './logger.js';
 import { createApp } from './app.js';
